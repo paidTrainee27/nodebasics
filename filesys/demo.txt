@@ -1,0 +1,4 @@
+this is a demo file for file read operation
+this is a second line.
+thank you!
+have a good day
