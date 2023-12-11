@@ -1,0 +1,23 @@
+[
+    {
+        "id": "1",
+        "model": "IPhone11",
+        "year": "2012",
+        "size": "32GB",
+        "colour": "Black"
+    },
+    {
+        "id": "2",
+        "model": "IPhone12",
+        "year": "2013",
+        "size": "64GB",
+        "colour": "Blue"
+    },
+    {
+        "id": "3",
+        "model": "IPhone13",
+        "year": "2014",
+        "size": "128GB",
+        "colour": "Silver"
+    }
+]
