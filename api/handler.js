@@ -1,5 +1,7 @@
 //Imports
 const fs = require("fs")
+const { MongoDB } = require('../repository/db/mongo')
+// const { ProductService } = require('../repository/services')
 //vars
 let products = []
 //Inits
@@ -21,21 +23,22 @@ exports.productHandler = {
         //query have params as optional/?id=1
         const q = req.query
         // console.log(q)
+        //get single product
         if (q.id) {
-            //check if id is blank
-            //filter() method iterates over all elements of the array and then returns a filtered array 
-            //which satisfy the condition specified. while find returns the first element it FINDS that 
-            //satifies the condition.
-            d = products.find((item) => { return item.id == q.id });
-            // console.log(d)
-            if (d === null || d === undefined) {
-                res.status(404).json({}).end()
-                return
-            }
-            res.status(200).json(d).end()
+            MongoDB.getProduct(q.id)
+                .then((results) => {
+                    res.status(200).json(results).end()
+                }).catch((err) => {
+                    res.status(500).json({ "error": err }).end()
+                });
             return
         }
-        res.status(200).json(products).end()
+        MongoDB.getAllProduct()
+            .then((results) => {
+                res.status(200).json(results).end()
+            }).catch((err) => {
+                res.status(500).json({ "error": err }).end()
+            });
     },
     addProduct: (req, res) => {
         const b = req.body
@@ -43,36 +46,33 @@ exports.productHandler = {
             res.status(403).json({}).end()
             return
         }
-        // console.log(id)
-        b.id = Math.floor(Math.random() * 1000)
-        products.push(b)
-        res.status(200).json(b).end()
+        // ProductService.saveProduct(b)
+        MongoDB.saveProduct(b).then((newId) => {
+            // console.log(newId)
+            return res.status(200).json({ _id: newId, ...b }).end()
+        }).catch((err) => {
+            // console.log(err)
+            return res.status(403).json({ "error": err }).end()
+        })
     },
     updateProduct: (req, res) => {
         const b = req.body
         const params = req.params
         if (params.id == undefined || params.id == '') {//only required during query param
-            res.status(401).json({}).end()
+            res.status(400).json({}).end()
             return
         }
         if (typeof b === undefined || Object.keys(req.body).length == 0) {
-            res.status(403).json({}).end()
+            res.status(400).json({}).end()
             return
         }
         // console.log(params.id)
-        const idx = products.findIndex((item, idx) => {
-            if (item.id == params.id) {
-                return idx
-            }
-            return 0
-        })
-        // console.log(idx)
-        if (idx == 0) {
-            res.status(404).json({}).end()
-            return
-        }
-        products[idx] = b
-        res.status(200).json(b).end()
+        MongoDB.replaceProduct(params.id, b)
+            .then((result) => {
+                res.status(200).json(result).end()
+            }).catch((err) => {
+                res.status(400).json({ error: err })
+            });
     },
     patchProduct: (req, res) => {
         const params = req.params
@@ -81,33 +81,25 @@ exports.productHandler = {
             || typeof reqBody == undefined
             || Object.keys(reqBody).length == 0
         ) {
-            res.status(401).json({}).end()
+            res.status(400).json({}).end()
             return
         }
-        const idx = products.findIndex((val, idx) => {
-            if (val.id == params.id) {
-                return idx
-            }
-            return 0
-        })
 
-        //check if idx is 0
-        const product = products[idx]
-        let obj = {
-            ...product,
-            ...reqBody
-        }
-        products[idx] = obj
-        res.status(200).json(obj).end()
+        MongoDB.updateProduct(params.id, reqBody)
+            .then((result) => {
+                res.status(200).json(result).end()
+            }).catch((err) => {
+                res.status(400).json({ error: err })
+            });
     },
     deleteProduct: (req, res) => {
         const paramid = req.params.id
         // delete products[idx]//adds null in the place
-        const idx = products.findIndex((val, i) => {
-            return val.id == paramid
-        })
-        // console.log(idx)
-        products.splice(idx, 1)
-        res.status(200).json(products).end()
+        MongoDB.deleteProduct(paramid)
+            .then(() => {
+                res.status(200).json({})
+            }).catch((err) => {
+                res.status(400).json({ error: err })
+            });
     }
 }
